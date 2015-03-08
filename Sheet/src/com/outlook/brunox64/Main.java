@@ -1,11 +1,9 @@
 package com.outlook.brunox64;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.URL;
 
 import javax.json.Json;
-import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.servlet.ServletException;
@@ -14,15 +12,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.bson.Document;
-
 import com.google.gdata.client.spreadsheet.SpreadsheetQuery;
 import com.google.gdata.client.spreadsheet.SpreadsheetService;
+import com.google.gdata.data.spreadsheet.CellEntry;
+import com.google.gdata.data.spreadsheet.CellFeed;
 import com.google.gdata.data.spreadsheet.SpreadsheetEntry;
 import com.google.gdata.data.spreadsheet.SpreadsheetFeed;
-import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.google.gdata.data.spreadsheet.WorksheetEntry;
+import com.google.gdata.data.spreadsheet.WorksheetFeed;
+import com.outlook.brunox64.dao.WorksheetDAO;
+import com.outlook.brunox64.model.WorksheetEntity;
 
 /**
  * Servlet implementation class Main
@@ -70,27 +69,29 @@ public class Main extends HttpServlet {
 		
 		JsonReader jsonReader = Json.createReader(req.getInputStream());
 		JsonObject params = jsonReader.readObject();
-		String sheet = params.getString("sheet");
-		JsonArray rangesArr = params.getJsonArray("ranges");
 		
-		MongoClient mongoClient = new MongoClient();
-		MongoDatabase db = mongoClient.getDatabase("local");
-		MongoCollection<Document> mColRanges = db.getCollection("ranges");
-		if (mColRanges == null) db.createCollection("ranges");
-		Document sheetDoc = new Document("sheet", sheet);
-		sheetDoc.put("ranges", rangesArr.toString());
-		mColRanges.insertOne(sheetDoc);
-		mongoClient.close();
-		PrintWriter wr = res.getWriter();
-		wr.append("sucesso!!!");
-		wr.close();
-		System.out.println(rangesArr.toString());
+		int spreadsheet = params.getInt("spreadsheet");
+		int worksheet = params.getInt("worksheet");
+		String operation = params.getString("operation");
+		
+		WorksheetEntity worksheetEntity = null;
+		WorksheetDAO worksheetDAO = new WorksheetDAO(worksheetEntity);
+		
+		if ("save".equals(operation)) {
+			worksheetDAO.save();
+		} else if ("load".equals(operation)) {
+			worksheetDAO.load();
+		}
 	}
 	
 	
 	public static void main(String[] args) throws Exception {
 		Main m = new Main();
 		m.load();
+	}
+	
+	private void clearCollection() throws Exception {
+		
 	}
 	
 	private void load() throws Exception {
@@ -128,10 +129,34 @@ public class Main extends HttpServlet {
 		SpreadsheetQuery query = new SpreadsheetQuery(SPREADSHEET_FEED_URL);
 		query.setTitleQuery("Planilha01");
 		query.setTitleExact(true);
+		
 		SpreadsheetFeed feed = service.getFeed(query, SpreadsheetFeed.class);
+		
 		SpreadsheetEntry entry = feed.getEntries().get(0);
 		
+		SpreadsheetQuery queryWorksheet = new SpreadsheetQuery(entry.getWorksheetFeedUrl());
+		queryWorksheet.setTitleQuery("Pagina1");
+		queryWorksheet.setTitleExact(true);
 		
+		WorksheetFeed feedWorksheet = service.getFeed(queryWorksheet, WorksheetFeed.class);
+		
+		WorksheetEntry worksheetEntry = feedWorksheet.getEntries().get(0);
+		
+		URL cellFeedUrl = worksheetEntry.getCellFeedUrl();
+		
+		CellFeed cellFeed = service.getFeed(cellFeedUrl, CellFeed.class);
+		
+		String cellName = null;
+		String listNamesCellToEdit = "";
+		for (int i = 1; i <= 5; i++) {
+			listNamesCellToEdit += "A" + i + "B" + i + "C" + i;
+		}
+		for (CellEntry cellEntry : cellFeed.getEntries()) {
+			cellName = cellEntry.getTitle().getPlainText();
+			if (listNamesCellToEdit.indexOf(cellName) > -1) {
+				
+			}
+		}
 	}
 	
 	private void save(String a1Annotation) {
