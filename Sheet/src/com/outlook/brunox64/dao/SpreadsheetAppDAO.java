@@ -16,30 +16,32 @@ public class SpreadsheetAppDAO {
 	
 	private SpreadsheetService service;
 	
-	public SpreadsheetAppDAO() {
+	private WorksheetEntity worksheet;
+	
+	public SpreadsheetAppDAO(WorksheetEntity worksheet) {
 		service = new SpreadsheetService("ProjetoSheet");
 		try {
 			service.setUserCredentials("brunowsws@gmail.com", "senhadaplanilha");
 		} catch (Exception exc) {
 			exc.printStackTrace();
 		}
-		
+		this.worksheet = worksheet;
 	}
 	
-	public void load(WorksheetEntity worksheetEntity) {
+	public void load() {
 		try {
 			
 			URL SPREADSHEET_FEED_URL = new URL("https://spreadsheets.google.com/feeds/spreadsheets/private/full");
 
 			SpreadsheetQuery query = new SpreadsheetQuery(SPREADSHEET_FEED_URL);
-			query.setIntegerCustomParameter("key", worksheetEntity.getSpreadsheetId());
+			query.setIntegerCustomParameter("key", worksheet.getSpreadsheetId());
 			
 			SpreadsheetFeed feed = service.getFeed(query, SpreadsheetFeed.class);
 			
 			SpreadsheetEntry entry = feed.getEntries().get(0);
 			
 			SpreadsheetQuery queryWorksheet = new SpreadsheetQuery(entry.getWorksheetFeedUrl());
-			queryWorksheet.setIntegerCustomParameter("key", worksheetEntity.getId());
+			queryWorksheet.setIntegerCustomParameter("key", worksheet.getId());
 			
 			WorksheetFeed feedWorksheet = service.getFeed(queryWorksheet, WorksheetFeed.class);
 			
@@ -65,7 +67,7 @@ public class SpreadsheetAppDAO {
 		}
 	}
 	
-	public void save(WorksheetEntity worksheetEntity) {
+	public void save() {
 		
 	}
 

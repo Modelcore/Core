@@ -20,6 +20,7 @@ import com.google.gdata.data.spreadsheet.SpreadsheetEntry;
 import com.google.gdata.data.spreadsheet.SpreadsheetFeed;
 import com.google.gdata.data.spreadsheet.WorksheetEntry;
 import com.google.gdata.data.spreadsheet.WorksheetFeed;
+import com.outlook.brunox64.dao.SpreadsheetAppDAO;
 import com.outlook.brunox64.dao.WorksheetDAO;
 import com.outlook.brunox64.model.WorksheetEntity;
 
@@ -74,13 +75,16 @@ public class Main extends HttpServlet {
 		int worksheet = params.getInt("worksheet");
 		String operation = params.getString("operation");
 		
-		WorksheetEntity worksheetEntity = null;
+		WorksheetEntity worksheetEntity = new WorksheetEntity(spreadsheet, worksheet);
+		SpreadsheetAppDAO spreadsheetAppDAO = new SpreadsheetAppDAO(worksheetEntity);
 		WorksheetDAO worksheetDAO = new WorksheetDAO(worksheetEntity);
 		
 		if ("save".equals(operation)) {
+			spreadsheetAppDAO.load();
 			worksheetDAO.save();
 		} else if ("load".equals(operation)) {
 			worksheetDAO.load();
+			spreadsheetAppDAO.save();
 		}
 	}
 	
